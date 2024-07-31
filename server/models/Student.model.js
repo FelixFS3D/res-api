@@ -8,14 +8,17 @@ const studentSchema = new Schema({
   phone: String,
   linkedinUrl: String,
   languages: {
-    type: String,
+    type: [String],
     enum: ["English", "Dutch", "Portuguese", "French", "Spanish", "German"],
   },
   program: String,
   background: String,
   image: String,
   projects: [],
-  cohort: {type: Schema.Types.ObjectId}
+  cohort: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref:"Cohort"
+  }
 });
 
 const Student = mongoose.model("Student", studentSchema);

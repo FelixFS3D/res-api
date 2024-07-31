@@ -3,13 +3,10 @@ const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const PORT = 5005;
 const cors = require("cors");
-const cohorts = require("./cohorts.json");
-const students = require("./students.json");
 const mongoose = require("mongoose");
 const Student = require("./models/Student.model");
-console.log(Student[0])
 const Cohort = require("./models/Cohort.model");
-console.log(Cohort[0])
+
 // STATIC DATA
 // Devs Team - Import the provided files with JSON data of students and cohorts here:
 // ...
@@ -39,15 +36,9 @@ app.get("/docs", (req, res) => {
   res.sendFile(__dirname + "/views/docs.html");
 });
 
-app.get("/api/cohorts", (req, res) => {
-  res.json(cohorts);
-});
 app.get("/api/students", (req, res) => {
-  res.json(students);
-});
-
-app.get("api/students", (req, res) => {
-  Student.find({})
+  Student.find()
+  .populate("cohort")
     .then((students) => {
       res.json(students);
     })
@@ -57,8 +48,8 @@ app.get("api/students", (req, res) => {
     });
 });
 
-app.get("api/cohorts", (req, res) => {
-  Cohort.find({})
+app.get("/api/cohorts", (req, res) => {
+  Cohort.find()
     .then((cohorts) => {
       res.json(cohorts);
     })
@@ -67,8 +58,221 @@ app.get("api/cohorts", (req, res) => {
       res.status(500).json({ error: "Failed to retrieve cohorts" });
     });
     
+
+  
 });
 
+app.get("/api/cohorts/:cohortId", async (req, res, next)=>{
+try {
+  console.log(req.params.cohortId)
+  const response = await Cohort.findById(req.params.cohortId)
+  res.json(response)
+
+} catch (error) {
+  console.log(error)
+  res.status(500).json({ error: "Failed to retrieve cohort" })
+}
+})
+
+app.get("/api/students/:studentId", async (req,res,next)=>{
+  try {
+    const response = await Student.findById(req.params.studentId)
+    .populate("cohort")
+    res.json(response)
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ error: "Failed to retrieve cohort" })
+}
+})
+
+app.post("/api/students", async (req,res,next)=>{
+
+  const {
+    firstName,
+    lastName,
+    email,
+    phone,
+    linkedinUrl,
+    languages,
+    program,
+    background,
+    image,
+    cohort,
+    projects
+  } = req.body
+
+  try {
+    const response = await Student.create({
+    firstName,
+    lastName,
+    email,
+    phone,
+    linkedinUrl,
+    languages,
+    program,
+    background,
+    image,
+    cohort,
+    projects
+    })
+    res.json(response)
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({message: "Error while creating a new student"})
+  }
+})
+
+app.get("/api/students/cohort/:cohortId", async (req,res,next)=>{
+  try {
+    
+    const response = await Student.find(req.query).select({ cohort: 1 })
+    .populate("cohort")
+    res.json(response)
+
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({message: "Error while retrieve a student"})
+  }
+})
+
+app.put("/api/students/:studentId", async (req,res,next)=>{
+  try {
+
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      linkedinUrl,
+      languages,
+      program,
+      background,
+      image,
+      cohort,
+      projects
+    } = req.body
+    
+    const response = await Student.findByIdAndUpdate(req.params.studentId, {
+      firstName,
+      lastName,
+      email,
+      phone,
+      linkedinUrl,
+      languages,
+      program,
+      background,
+      image,
+      cohort,
+      projects
+    },{new:true})
+    res.json(response)
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({message: "Error while updating a single student"})
+  }
+})
+
+app.delete("/api/students/:studentId", async (req,res,next)=>{
+
+try {
+  
+  await Student.findByIdAndDelete(req.params.studentId)
+  res.json("Student borrado")
+
+} catch (error) {
+  console.log(error)
+  res.status(500).json({message: "Error while deleting a single student"})
+}
+
+})
+
+app.post("/api/cohorts", async (req,res,next)=>{
+
+  const {inProgress,
+    cohortSlug,
+    cohortName,
+    program,
+    campus,
+    startDate,
+    endDate,
+    programManager,
+    leadTeacher,
+    totalHours} = req.body
+
+try {
+  
+  const response = await Cohort.create({
+
+    inProgress,
+    cohortSlug,
+    cohortName,
+    program,
+    campus,
+    startDate,
+    endDate,
+    programManager,
+    leadTeacher,
+    totalHours
+
+  },{new:true})
+  res.json(response)
+} catch (error) {
+  console.log(error)
+  res.status(500).json({message: "Error while creating a new cohort"})
+}
+
+})
+
+app.put("/api/cohorts/:cohortId", async (req,res,next)=>{
+
+  const {inProgress,
+    cohortSlug,
+    cohortName,
+    program,
+    campus,
+    startDate,
+    endDate,
+    programManager,
+    leadTeacher,
+    totalHours} = req.body
+
+try {
+  
+  const response = await Cohort.findByIdAndUpdate(req.params.cohortId, {
+
+    inProgress,
+    cohortSlug,
+    cohortName,
+    program,
+    campus,
+    startDate,
+    endDate,
+    programManager,
+    leadTeacher,
+    totalHours
+
+  },{new:true})
+  res.json(response)
+} catch (error) {
+  console.log(error)
+  res.status(500).json({message: "Error while updating a single cohort"})
+}
+
+})
+
+app.delete("/api/cohorts/:cohortId", async (req,res,next)=>{
+
+  try {
+    await Cohort.findByIdAndDelete(req.params.cohortId)
+    res.json("Cohort Borrado")
+
+
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({message: "Error while deleting a single cohort"})
+  }
+
+})
 
 // START SERVER
 app.listen(PORT, () => {
